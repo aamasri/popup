@@ -11,7 +11,6 @@ const packageJson = require('./package.json');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');               // creates index.html in web/public directory
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const CleanObsoleteChunks = require('webpack-clean-obsolete-chunks');   // removes obsolete hashed files = require(previous builds
 const TerserPlugin = require('terser-webpack-plugin');
 
 const postCssLoader = {
@@ -70,7 +69,8 @@ module.exports = (env, argv) => {
             path: path.resolve(__dirname, './dist'),
             filename: 'popup.js',
             publicPath: '/',                        // where browser will request the webpack files
-            chunkFilename: 'chunk_[name].js'        // chunk filename
+            chunkFilename: 'chunk_[name].js',       // chunk filename
+            clean: true,                            // clean the output directory before emit
         },
         watch: isDev,
         devtool: isDev ? 'source-map' : false,  // useful for debugging.
@@ -127,7 +127,6 @@ module.exports = (env, argv) => {
 
 
         plugins: [
-            new CleanObsoleteChunks(),  // removes obsolete hashed files from previous builds
             new HtmlWebpackPlugin({
                 template: sourcePath + 'demo.html',
                 minify: !isDev && {
@@ -146,7 +145,7 @@ module.exports = (env, argv) => {
             new webpack.BannerPlugin({
                 banner: `
  popup package version ${packageJson.version}
- (c) 2020 Ananda Masri
+ (c) 2022 Ananda Masri
  Released under the MIT license
  auro.technology/open-source/popup
  `
