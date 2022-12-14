@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Example Popup</title>
+
+    <style>
+        html {
+            font-family: Verdana, 'sans-serif';
+            line-height: 2;
+            padding: 10px 3%;
+        }
+
+        button {
+            position: absolute;
+            border: none;
+            border-radius: 6px;
+            background-color: #5bc0de;
+            color: white;
+            padding: 10px;
+            margin: 0 10px 10px 0;
+            outline: none;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        pre { color: royalblue; }
+
+        #callback-messages {
+            position: fixed;
+            left: 15%;
+            bottom: 14rem;
+            height: 30vh;
+            color: #AAA;
+            overflow: auto;
+        }
+    </style>
+<script defer="defer" src="/popup.js"></script></head>
+
+
+<body>
+
+<h1>Popup Demo</h1>
+
+<button id="popup0">Cheat sheet (no target)</button>
+<button id="popup1" style="right: 10rem;">Simple Popup with<br>callback on close</button>
+<button id="popup4" style="right: 10%; bottom: 10rem;">Persistent popup from existing<br>element title & content</button>
+<button id="popup3" style="left: 10%; bottom: 10rem;">Right Bottom Target</button>
+
+<div id="popup4Content" hidden>
+    eg.<br>
+    <pre>
+    &lt;div id="popup" hidden&gt;
+        Popup Content
+    &lt;/div&gt;
+
+    &lt;script&gt;
+        popup.open({ source: '#popup' }).then();
+    &lt;/script&gt;
+    </pre>
+</div>
+
+<div id="callback-messages"></div>
+
+
+
+
+<script>
+    let clickCount = 0;
+
+    document.getElementById('popup0').onclick = () => {
+        popup.open();
+    };
+
+
+    document.getElementById('popup1').onclick = event => {
+        popup.open({
+            source: popup1Content + `<span style="color:silver;">Popup count: ${++clickCount}</span>`,
+            target: event.target,
+            onClose: () => { jQuery('#callback-messages').prepend(`Callback says: simple popup closed<br>`); },
+            attributes: 'data-ignore-events="true"',
+        }).then(() => {
+            console.log('popup launched');
+        });
+    };
+
+
+
+    document.getElementById('popup3').onclick = event => {
+        popup.open({
+            source: '#popup4Content',
+            target: event.target,
+        }).then();
+    };
+
+
+    document.getElementById('popup4').onclick = event => {
+        popup.open({
+            source: '#popup4Content',
+            target: event.target,
+            persistent: true
+        }).then();
+    };
+
+
+    const popup1Content = `This popup was launched programmatically with javascript eg.<br>
+<pre>
+popup.open({
+    source: 'Sample HTML content...',
+    target: event.target,
+    replace: true
+}).then((thisPopupElement) => {
+    console.log('launched', thisPopupElement);
+});
+</pre><br><hr>`;
+
+
+    const popup3Content = `<strong>To close the top popup, ESCAPE, click away, or click the popup close button.</strong><br><br>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<br>Ultricies tristique nulla aliquet enim tortor. Massa enim nec dui nunc mattis enim. <br><br>Condimentum lacinia quis vel eros donec ac odio. Sociis natoque penatibus et magnis dis parturient. Proin libero nunc consequat interdum. Sit amet facilisis magna etiam tempor orci eu lobortis. Et ligula ullamcorper malesuada proin libero nunc consequat. Euismod lacinia at quis risus sed vulputate odio. At auctor urna nunc id cursus metus aliquam. In metus vulputate eu scelerisque felis imperdiet proin. Sed euismod nisi porta lorem mollis aliquam ut. Feugiat pretium nibh ipsum consequat. Malesuada proin libero nunc consequat interdum varius sit. Dapibus ultrices in iaculis nunc sed augue. Nulla malesuada pellentesque elit eget gravida cum sociis natoque. Felis eget velit aliquet sagittis id consectetur.Volutpat odio facilisis mauris sit amet massa. Consectetur adipiscing elit ut aliquam purus sit amet. Dis parturient montes nascetur ridiculus mus mauris vitae ultricies. Nunc sed velit dignissim sodales ut eu. Fermentum leo vel orci porta non pulvinar. Ut porttitor leo a diam. In eu mi bibendum neque egestas congue quisque egestas diam. Augue ut lectus arcu bibendum at varius. Volutpat odio facilisis mauris sit. Purus ut faucibus pulvinar elementum integer enim neque volutpat ac. Ac auctor augue mauris augue neque. Dignissim diam quis enim lobortis scelerisque fermentum dui faucibus. Est sit amet facilisis magna etiam tempor.<br><br>Sodales ut eu sem integer vitae justo eget magna fermentum. Lorem ipsum dolor sit amet.`;
+
+</script>
+
+</body>
+</html>
