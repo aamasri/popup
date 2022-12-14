@@ -110,6 +110,7 @@ Here's another example with different options; eg. to load/display a fragment of
 <pre>    popup.open({ 
              title: `${userName}'s User Profile`, 
              source: userUrl,
+             target: document.querySelector('#target'),
              fragment: '.contact-info'
              modal: true,
              onClose: function() { alert: `Don't hesitate to call ${userName}!`; }
@@ -128,6 +129,7 @@ Here's the full list of popup.open options:
 
 <tr><td>title</td><td>string | undefined</td><td>popup title, else source element title attribute</td><td>"Missing Title"</td></tr>
 <tr><td>source</td><td>string | object | undefined</td><td>the content source: html content, selector, url, or element</td><td>usage instructions</td></tr>
+<tr><td>target</td><td>string | object | undefined</td><td>the popup target: html element, css selector, jQuery object, or HTML element</td><td>usage instructions</td></tr>
 <tr><td>fragment**</td><td>string | undefined</td><td>selector by which to extract a portion of the source HTML</td><td></td></tr>
 <tr><td>modal**</td><td>boolean | undefined</td><td>popup background blurring & dimming</td><td>false</td></tr>
 <tr><td>iframe</td><td>boolean | undefined</td><td>if the source is a url, whether to load it in an iFrame. Adds a full-screen link.</td><td>false</td></tr>
