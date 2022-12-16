@@ -25,8 +25,8 @@ let $window;
  * @param {string|undefined } options.fragment - (optional) selector by which to isolate a portion of the source HTML
  * @param {boolean|undefined} options.modal - (default false) page background dimming
  * @param {string|object|undefined} options.target - the target: selector, jQuery object or element
+ * @param {boolean|undefined} options.showCloseButton - (default false) whether to show the close button
  * @param {boolean|undefined} options.replace - (default true) whether to close any existing popups or layer up
- * @param {boolean|undefined} options.persistent - (default false) whether ESC/blur automatically closes the popup
  * @param {function|string|undefined} options.onClose - (optional) function or eval(string) callback to execute after popup dismissed
  * @param {string|undefined} options.classes - (optional) classes to apply to the popup
  * @param {string|undefined} options.attributes - (optional) attributes to apply to the popup
@@ -101,11 +101,19 @@ async function open(options) {
 
     // build the popup UI
     const modalDiv = options.modal ? `<div class="popup-modal" data-for="${popupId}"></div>` : '';
+    const closeButton = options.showCloseButton ? `
+        <div class="icons">
+            <span class="icon-close">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 116 116">
+                    <path d="M35.76335,28.59668c-2.91628,0.00077 -5.54133,1.76841 -6.63871,4.47035c-1.09737,2.70194 -0.44825,5.79937 1.64164,7.83336l45.09961,45.09961l-45.09961,45.09961c-1.8722,1.79752 -2.62637,4.46674 -1.97164,6.97823c0.65473,2.51149 2.61604,4.4728 5.12753,5.12753c2.51149,0.65473 5.18071,-0.09944 6.97823,-1.97165l45.09961,-45.09961l45.09961,45.09961c1.79752,1.87223 4.46675,2.62641 6.97825,1.97168c2.5115,-0.65472 4.47282,-2.61605 5.12755,-5.12755c0.65472,-2.5115 -0.09946,-5.18073 -1.97168,-6.97825l-45.09961,-45.09961l45.09961,-45.09961c2.11962,-2.06035 2.75694,-5.21064 1.60486,-7.93287c-1.15207,-2.72224 -3.85719,-4.45797 -6.81189,-4.37084c-1.86189,0.05548 -3.62905,0.83363 -4.92708,2.1696l-45.09961,45.09961l-45.09961,-45.09961c-1.34928,-1.38698 -3.20203,-2.16948 -5.13704,-2.1696z"/>
+                </svg>
+            </span>
+        </div>` : '';
+
 
     const createdData = `data-created="${Date.now()}"`;
 
     let classes = [];
-    if (options.persistent) classes.push('persistent');
     if (options.classes && typeof options.classes === 'string') classes.push(options.classes);
 
     const attributes = options.attributes || '';
@@ -114,12 +122,7 @@ async function open(options) {
                         <div id="${popupId}" class="popup-box ${classes.join(' ')}" ${attributes} ${createdData}>
                             <div class="arrow"></div>
                             
-                            <div class="icons">
-                                <span class="icon-close">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 116 116">
-                                        <path d="M35.76335,28.59668c-2.91628,0.00077 -5.54133,1.76841 -6.63871,4.47035c-1.09737,2.70194 -0.44825,5.79937 1.64164,7.83336l45.09961,45.09961l-45.09961,45.09961c-1.8722,1.79752 -2.62637,4.46674 -1.97164,6.97823c0.65473,2.51149 2.61604,4.4728 5.12753,5.12753c2.51149,0.65473 5.18071,-0.09944 6.97823,-1.97165l45.09961,-45.09961l45.09961,45.09961c1.79752,1.87223 4.46675,2.62641 6.97825,1.97168c2.5115,-0.65472 4.47282,-2.61605 5.12755,-5.12755c0.65472,-2.5115 -0.09946,-5.18073 -1.97168,-6.97825l-45.09961,-45.09961l45.09961,-45.09961c2.11962,-2.06035 2.75694,-5.21064 1.60486,-7.93287c-1.15207,-2.72224 -3.85719,-4.45797 -6.81189,-4.37084c-1.86189,0.05548 -3.62905,0.83363 -4.92708,2.1696l-45.09961,45.09961l-45.09961,-45.09961c-1.34928,-1.38698 -3.20203,-2.16948 -5.13704,-2.1696z"/>
-                                    </svg></span>
-                            </div>
+                            ${closeButton}
                             
                             <div class="popup-body">
                                 ${(popupBody || 'Loading •••')}
@@ -439,10 +442,7 @@ function closeLast() {
     const popups = getAllPopups();
     if (popups.length) {
         const lastPopup = popups[popups.length - 1];
-
-        // persistent popups don't close on blur
-        if (!lastPopup.classList.contains('persistent'))
-            close(lastPopup);
+        close(lastPopup);
     }
 }
 
@@ -560,12 +560,8 @@ function initPopupListeners() {
                 const createdAt = relatedPopup.getAttribute('data-created');
 
                 getAllPopups().forEach((popup) => {
-                    if (popup.getAttribute('data-created') >= createdAt) {
-
-                        // persistent popups don't close on blur
-                        if (!popup.classList.contains('persistent'))
-                            close(popup);
-                    }
+                    if (popup.getAttribute('data-created') >= createdAt)
+                        close(popup);
                 });
             } else
                 if (debug) console.debug(`  clicked on a modal but it's related popup is no longer in the DOM`);
@@ -628,7 +624,6 @@ options object {
     fragment:   selector            selector by which to isolate a portion of the source HTML
     modal:      boolean             page background dimming
     replace:    boolean             whether to close any existing popups or layer up
-    persistent: boolean             whether ESC/blur automatically closes the popup
     onClose:    function | string   callback function or eval(string) to execute after popup dismissed
     classes:    string              classes to apply to the popup container element
     attributes: string              attributes to apply to the popup container element eg. 'data-ignore-events="true"'
