@@ -1,7 +1,7 @@
 {
   "name": "@aamasri/popup",
-  "version": "1.0.4",
-  "versionDescription": "Made the close button optional and fixed a popup style issue.",
+  "version": "1.0.5",
+  "versionDescription": "Fixed a few more positioning issues.",
   "scripts": {
     "build-development": "webpack --mode development",
     "build-production": "webpack --mode production",

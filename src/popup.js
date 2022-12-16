@@ -267,9 +267,6 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     if (!$popup.length || !$target.length || !isVisible($target))
         return;    // abort positioning on the target (not visible)
 
-    const $arrow = $popup.find('.arrow');
-    $arrow.css('display', 'block');  // target is visible, so we're going to point to it
-
     const POPUP_WIDTH = $popup.outerWidth();
     const POPUP_HEIGHT = $popup.outerHeight();
     const TARGET_WIDTH = $target.outerWidth();
@@ -284,10 +281,15 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     const top = targetViewOffset.top >= targetViewOffset.bottom;
     const horizontalSpace = (left ? targetViewOffset.left : targetViewOffset.right) - TARGET_MARGIN - PAGE_MARGIN;
     const verticalSpace = (top ? targetViewOffset.top : targetViewOffset.bottom) - TARGET_MARGIN - PAGE_MARGIN;
-    const beside = horizontalSpace >= POPUP_WIDTH;  // prefer positioning beside the target
+    let beside = horizontalSpace >= POPUP_WIDTH;  // prefer positioning beside the target
+    if (beside && (targetViewOffset.top < TARGET_MARGIN || targetViewOffset.bottom < TARGET_MARGIN))
+        beside = false;     // we need a bit more space above or below the target to show popup beside it
 
     if (POPUP_WIDTH > horizontalSpace && POPUP_HEIGHT > verticalSpace)
         return;    // abort positioning (popup too large to fit beside/above/below the target)
+
+    const $arrow = $popup.find('.arrow');
+    $arrow.css('display', 'block');  // target is visible, so we're going to point to it
 
     if (debug) console.log(`positionPopup 
         target width: ${TARGET_WIDTH} 
@@ -320,6 +322,7 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         show beside: ${beside}
     `);
 
+
     const position = ($target.css('position') === 'fixed') ? 'fixed' : 'absolute';
     const targetOffset = (position === 'fixed') ? targetViewOffset : targetDocOffset;
 
@@ -341,11 +344,12 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     if (beside) {
         if (left) {
             // position to left of target
-            popupCss.right = WINDOW_WIDTH - targetOffset.left + TARGET_MARGIN;
+            popupCss.left = targetOffset.left - POPUP_WIDTH - HALF_ARROW_SIZE - TARGET_MARGIN;
+            popupCss.width = POPUP_WIDTH;   // because we depend on the popup width not changing
             $arrow.addClass('right')    // arrow on right side of popup
         } else {
             // position to right of target
-            popupCss.left = WINDOW_WIDTH + $window.scrollLeft() - targetOffset.right + TARGET_MARGIN;
+            popupCss.left = targetOffset.left + TARGET_WIDTH + HALF_ARROW_SIZE + TARGET_MARGIN;
             $arrow.addClass('left')     // arrow on left side of popup
         }
 
@@ -362,14 +366,19 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         }
 
         // position arrow vertically
-        arrow.style.marginTop = targetOffset.top - popupCss.top + (TARGET_HEIGHT / 2) - $arrow.position().top - HALF_ARROW_SIZE + 'px';
+        let arrowTop = targetOffset.top - popupCss.top + (TARGET_HEIGHT / 2) - $arrow.position().top - HALF_ARROW_SIZE;
+        arrowTop = (arrowTop < 0) ? 0 : arrowTop;
+        arrow.style.marginTop = arrowTop + 'px';
 
     } else {
         // there's not enough space beside the target, so position above/below the target
         // aligned to document left/right edge (to prevent overflow)
         popupCss.maxWidth = WINDOW_WIDTH - (PAGE_MARGIN * 2);
         popupCss.left = (WINDOW_WIDTH / 2) - (POPUP_WIDTH / 2) + $window.scrollLeft();
-        arrow.style.marginLeft = targetOffset.left - popupCss.left + (TARGET_WIDTH / 2) - $arrow.position().left - HALF_ARROW_SIZE + 'px';
+
+        let arrowLeft = targetOffset.left - popupCss.left + (TARGET_WIDTH / 2) - $arrow.position().left - HALF_ARROW_SIZE;
+        arrowLeft = (arrowLeft < 0) ? 0 : arrowLeft;
+        arrow.style.marginLeft = arrowLeft + 'px';
 
         if (top) {
             // top left       |-------|
