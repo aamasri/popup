@@ -5,10 +5,12 @@
     <title>Example Popup</title>
 
     <style>
-        html {
+        body {
             font-family: Verdana, 'sans-serif';
             line-height: 2;
             padding: 10px 3%;
+            width: 1000px;
+            height: 1200px;
         }
 
         button {
@@ -44,6 +46,7 @@
 
 <button id="popup0">Cheat sheet (no target)</button>
 <button id="popup1" style="right: 10rem;">Simple Popup with<br>callback on close</button>
+<button id="popup2" style="top: 20%; left: 10rem; background-color: red; display: none;">Plain Popup</button>
 <button id="popup4" style="right: 10%; bottom: 10rem;">Persistent popup from existing<br>element title & content</button>
 <button id="popup3" style="left: 10%; bottom: 10rem;">Right Bottom Target</button>
 
@@ -73,6 +76,8 @@
     };
 
 
+
+
     document.getElementById('popup1').onclick = event => {
         popup.open({
             source: popup1Content + `<span style="color:silver;">Popup count: ${++clickCount}</span>`,
@@ -83,6 +88,18 @@
             console.log('popup launched');
         });
     };
+
+
+    document.getElementById('popup2').onclick = event => {
+        popup.open({
+            source: popup1Content + `<span style="color:silver;">Popup count: ${++clickCount}</span>`,
+            target: event.target,
+            attributes: 'data-ignore-events="true"',
+        }).then(() => {
+            console.log('popup launched');
+        });
+    };
+
 
 
 

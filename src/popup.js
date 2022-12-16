@@ -7,7 +7,7 @@
 
 
 import './popup.styl';
-import { getViewportOffset, isVisible, onTopZIndex } from '@aamasri/dom-utils';
+import { getDocumentOffset, getViewportOffset, isVisible, onTopZIndex } from '@aamasri/dom-utils';
 
 
 // module scope vars
@@ -264,6 +264,9 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     if (!$popup.length || !$target.length || !isVisible($target))
         return;    // abort positioning on the target (not visible)
 
+    const $arrow = $popup.find('.arrow');
+    $arrow.css('display', 'block');  // target is visible, so we're going to point to it
+
     const POPUP_WIDTH = $popup.outerWidth();
     const POPUP_HEIGHT = $popup.outerHeight();
     const TARGET_WIDTH = $target.outerWidth();
@@ -271,13 +274,9 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     const WINDOW_WIDTH = jQuery(window).width();
     const WINDOW_HEIGHT = jQuery(window).height();
     const targetViewOffset = getViewportOffset($target);
-    const DOC_WIDTH = jQuery(document).width();
-    const DOC_HEIGHT = jQuery(document).height();
-    const targetDocOffset = $target.offset();   // top/left offset relative to document
-    targetDocOffset.right = DOC_WIDTH - targetDocOffset.left - TARGET_WIDTH;
-    targetDocOffset.bottom = DOC_HEIGHT - targetDocOffset.top - TARGET_HEIGHT;
+    const targetDocOffset = getDocumentOffset($target);
 
-    console.log(`targetDocOffset`, targetDocOffset);
+    if (debug) console.log(`targetDocOffset`, targetDocOffset);
     const left = targetViewOffset.left >= targetViewOffset.right;
     const top = targetViewOffset.top >= targetViewOffset.bottom;
     const horizontalSpace = (left ? targetViewOffset.left : targetViewOffset.right) - TARGET_MARGIN - PAGE_MARGIN;
@@ -287,7 +286,7 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     if (POPUP_WIDTH > horizontalSpace && POPUP_HEIGHT > verticalSpace)
         return;    // abort positioning (popup too large to fit beside/above/below the target)
 
-    console.log(`positionPopup 
+    if (debug) console.log(`positionPopup 
         target width: ${TARGET_WIDTH} 
         target height: ${TARGET_HEIGHT}
 
@@ -305,6 +304,11 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         target viewport offset top: ${Math.round(targetViewOffset.top)} 
         target viewport offset bottom: ${Math.round(targetViewOffset.bottom)} 
 
+        target document offset left: ${Math.round(targetDocOffset.left)} 
+        target document offset right: ${Math.round(targetDocOffset.right)} 
+        target document offset top: ${Math.round(targetDocOffset.top)} 
+        target document offset bottom: ${Math.round(targetDocOffset.bottom)} 
+
         horizontal space: ${Math.round(horizontalSpace)} 
         vertical space: ${Math.round(verticalSpace)}
         
@@ -313,8 +317,11 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         show beside: ${beside}
     `);
 
+    const position = ($target.css('position') === 'fixed') ? 'fixed' : 'absolute';
+    const targetOffset = (position === 'fixed') ? targetViewOffset : targetDocOffset;
+
     const popupCss = {
-        //position: ($target.style.position === 'fixed') ? 'fixed' : 'absolute',   // we need to position the popup relative to the target
+        position: position,   // we need to position the popup relative to the target
         overflow: 'visible',
         top: 'auto',
         right: 'auto',
@@ -324,20 +331,18 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     };
 
     // arrow
-    const $arrow = $popup.find('.arrow');
     const arrow = $arrow[0];
-    const ARROW_SIZE = $arrow.outerWidth();
+    const HALF_ARROW_SIZE = Math.sqrt(Math.pow($arrow.outerWidth(), 2) * 2) / 2;
 
     // there are 8 possible positions for the popup (beside/above/below/left/right of the target)
     if (beside) {
         if (left) {
             // position to left of target
-            popupCss.right = (WINDOW_WIDTH - targetDocOffset.left + TARGET_MARGIN) + 'px';
+            popupCss.right = WINDOW_WIDTH - targetOffset.left + TARGET_MARGIN;
             $arrow.addClass('right')    // arrow on right side of popup
-
         } else {
             // position to right of target
-            popupCss.left = (WINDOW_WIDTH - targetDocOffset.right + TARGET_MARGIN) + 'px';
+            popupCss.left = WINDOW_WIDTH + $window.scrollLeft() - targetOffset.right + TARGET_MARGIN;
             $arrow.addClass('left')     // arrow on left side of popup
         }
 
@@ -345,31 +350,23 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
             // top left     |-------|
             // beside       | POPUP |     |--|
             //              |_______|> .. |__|
-            popupCss.bottom = (targetDocOffset.bottom - TARGET_MARGIN) + 'px';
-            arrow.style.marginTop = POPUP_HEIGHT - (ARROW_SIZE * 3) - (TARGET_HEIGHT / 2) + 'px';
+            popupCss.top = targetOffset.top - POPUP_HEIGHT + TARGET_HEIGHT + TARGET_MARGIN;
         } else {
             // bottom left  |-------|> .. |--|
             // beside       | POPUP |     |__|
             //              |_______|
-            popupCss.top = (targetDocOffset.top - TARGET_MARGIN) + 'px';
-            arrow.style.marginTop = (ARROW_SIZE / 2) + (TARGET_HEIGHT / 2) + 'px';
+            popupCss.top = (targetOffset.top - TARGET_MARGIN);
         }
+
+        // position arrow vertically
+        arrow.style.marginTop = targetOffset.top - popupCss.top + (TARGET_HEIGHT / 2) - $arrow.position().top - HALF_ARROW_SIZE + 'px';
 
     } else {
         // there's not enough space beside the target, so position above/below the target
         // aligned to document left/right edge (to prevent overflow)
         popupCss.maxWidth = WINDOW_WIDTH - (PAGE_MARGIN * 2);
-
-        if (left) {
-            // position below (left) of target
-            popupCss.left = PAGE_MARGIN + 'px';
-            arrow.style.marginLeft = targetDocOffset.left - $arrow.offset().left + (TARGET_WIDTH / 2) + (ARROW_SIZE / 3) + 'px';
-            //arrow.style.marginLeft = POPUP_WIDTH - (ARROW_SIZE * 3) - (TARGET_WIDTH / 2) + 'px';
-        } else {
-            // position below (right) of target
-            popupCss.right = PAGE_MARGIN + 'px';
-            arrow.style.marginLeft = targetDocOffset.left - $arrow.offset().left + (TARGET_WIDTH / 2) - (ARROW_SIZE) + 'px';
-        }
+        popupCss.left = (WINDOW_WIDTH / 2) - (POPUP_WIDTH / 2) + $window.scrollLeft();
+        arrow.style.marginLeft = targetOffset.left - popupCss.left + (TARGET_WIDTH / 2) - $arrow.position().left - HALF_ARROW_SIZE + 'px';
 
         if (top) {
             // top left       |-------|
@@ -378,8 +375,7 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
             //                      .
             //                    |--|
             //                    |__|
-
-            popupCss.top = (targetDocOffset.top - POPUP_HEIGHT - TARGET_MARGIN) + 'px';
+            popupCss.top = targetOffset.top - POPUP_HEIGHT - TARGET_MARGIN;
             $arrow.addClass('bottom')   // point to the target below
         } else {
             //                    |--|
@@ -388,14 +384,12 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
             // bottom left   |-------|
             // !beside       | POPUP |
             //               |_______|
-            popupCss.bottom = (targetDocOffset.bottom - POPUP_HEIGHT - TARGET_MARGIN) + 'px';
-            console.log(`css.bottom = (${targetDocOffset.bottom} - ${POPUP_HEIGHT} - ${TARGET_MARGIN}) + 'px' =`, popupCss.bottom)
+            popupCss.top = targetOffset.top + TARGET_HEIGHT + TARGET_MARGIN;
             $arrow.addClass('top')   // point to the target above
         }
     }
 
-    console.log(`popup css`, popupCss);
-
+    if (debug) console.log(`popup css absolute`, popupCss);
     $popup.css(popupCss);
 }
 
