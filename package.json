@@ -1,7 +1,7 @@
 {
   "name": "@aamasri/popup",
-  "version": "1.0.5",
-  "versionDescription": "Fixed a few more positioning issues.",
+  "version": "1.0.6",
+  "versionDescription": "Fixed popup width locked prior to loading remote content.",
   "scripts": {
     "build-development": "webpack --mode development",
     "build-production": "webpack --mode production",

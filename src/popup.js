@@ -213,7 +213,6 @@ function openAnimatePopup($popup, target=null) {
     const windowWidth = $window.width();
     const windowHeight = $window.height();
     const windowArea = windowHeight * windowWidth;
-    const wide = (popupWidth / windowWidth) > 0.8;   // avoid overshooting the viewport (hence 2 animations)
     const large = popupArea / windowArea > 0.3;
 
     if (large)
@@ -266,6 +265,10 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     const $target = jQuery(target);
     if (!$popup.length || !$target.length || !isVisible($target))
         return;    // abort positioning on the target (not visible)
+
+    // in the case of loading content from a remote endpoint, this would be a second positioning
+    // pass, so we will unlock the width in order to access the true popup width
+    $popup.css('width', 'auto');
 
     const POPUP_WIDTH = $popup.outerWidth();
     const POPUP_HEIGHT = $popup.outerHeight();

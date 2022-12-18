@@ -9,7 +9,7 @@
 const webpack = require('webpack');
 const packageJson = require('./package.json');
 const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');               // creates index.html in web/public directory
+const HtmlWebpackPlugin = require('html-webpack-plugin');       // creates index.html in web/public directory
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
