@@ -21,10 +21,10 @@ let $window;
 /** launches a content popup box configured by an options object
  *
  * @param {Object} options
- * @param {string|object|undefined} options.source - the content source: html content, selector, url(GET encoded data), or element
+ * @param {Element|string|object|undefined} options.source - the content source: html content, selector, url(GET encoded data), or element
  * @param {string|undefined } options.fragment - (optional) selector by which to isolate a portion of the source HTML
  * @param {boolean|undefined} options.modal - (default false) page background dimming
- * @param {string|object|undefined} options.target - the target: selector, jQuery object or element
+ * @param {Element|string|object|undefined} options.target - the target: selector, jQuery object or element
  * @param {boolean|undefined} options.showCloseButton - (default false) whether to show the close button
  * @param {boolean|undefined} options.replace - (default true) whether to close any existing popups or layer up
  * @param {function|string|undefined} options.onClose - (optional) function or eval(string) callback to execute after popup dismissed
