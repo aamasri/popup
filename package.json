@@ -1,7 +1,7 @@
 {
   "name": "@aamasri/popup",
-  "version": "1.0.6",
-  "versionDescription": "Fixed popup width locked prior to loading remote content.",
+  "version": "1.0.7",
+  "versionDescription": "Tweaked arrow shadow for dark backgrounds.",
   "scripts": {
     "build-development": "webpack --mode development",
     "build-production": "webpack --mode production",
