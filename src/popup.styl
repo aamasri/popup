@@ -51,6 +51,7 @@ $maxHeight = 75vh
     /* new scrollbar css spec & Firefox */
     scrollbar-width thin
     scrollbar-color var(--popupIconColor, $popupIconColor) var(--popupBackground, $popupBackground)   /* scroll thumb & track */
+    transition inset 300ms
 
     .arrow
         display none
@@ -60,6 +61,7 @@ $maxHeight = 75vh
         background-color inherit
         width var(--popupArrowSize, $popupArrowSize)
         height var(--popupArrowSize, $popupArrowSize)
+        transition margin 300ms
 
         &.top
             inset -12px auto auto auto

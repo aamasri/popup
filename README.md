@@ -127,13 +127,12 @@ Here's the full list of popup.open options:
 <table>
 <tr><th align="left">Option</th><th align="left">Type</th><th align="left">Description</th><th align="left">Default</th></tr>
 
-<tr><td>title</td><td>string | undefined</td><td>popup title, else source element title attribute</td><td>"Missing Title"</td></tr>
 <tr><td>source**</td><td>string | object | undefined</td><td>the content source: html content, selector, url, or element</td><td>usage instructions</td></tr>
 <tr><td>target</td><td>string | object | undefined</td><td>the popup target: html element, css selector, jQuery object, or HTML element</td><td>usage instructions</td></tr>
 <tr><td>fragment</td><td>string | undefined</td><td>selector by which to extract a portion of the source HTML</td><td></td></tr>
 <tr><td>modal</td><td>boolean | undefined</td><td>popup background blurring & dimming</td><td>false</td></tr>
 <tr><td>showCloseButton</td><td>boolean | undefined</td><td>whether to show the close button</td><td>false</td></tr>
-<tr><td>replace</td><td>boolean | undefined</td><td>whether to close any existing popups or layer up</td><td>false</td></tr>
+<tr><td>replace</td><td>boolean | undefined</td><td>whether to close last popup or recycle it with a transition effect</td><td>true</td></tr>
 <tr><td>onClose</td><td>function | string | undefined</td><td>callback function or eval(string) to execute after popup dismissed</td><td></td></tr>
 <tr><td>classes</td><td>string | undefined</td><td>additional classes to apply to the popup container element</td><td></td></tr>
 <tr><td>attributes</td><td>string | undefined</td><td>attributes to apply to the popup container element eg. 'data-ignore-events="true"'</td><td></td></tr>

@@ -16,6 +16,7 @@ let loadUrlBusy;
 let popupCount = 0;
 let $body;
 let $window;
+let lastAnimation;
 
 
 /** launches a content popup box configured by an options object
@@ -26,7 +27,7 @@ let $window;
  * @param {boolean|undefined} options.modal - (default false) page background dimming
  * @param {Element|string|object|undefined} options.target - the target: selector, jQuery object or element
  * @param {boolean|undefined} options.showCloseButton - (default false) whether to show the close button
- * @param {boolean|undefined} options.replace - (default true) whether to close any existing popups or layer up
+ * @param {boolean|undefined} options.replace - (default true) whether to recycle an existing popup or layer up
  * @param {function|string|undefined} options.onClose - (optional) function or eval(string) callback to execute after popup dismissed
  * @param {string|undefined} options.classes - (optional) classes to apply to the popup
  * @param {string|undefined} options.attributes - (optional) attributes to apply to the popup
@@ -36,39 +37,25 @@ let $window;
 async function open(options) {
     options = options || {};
 
-    if (debug) console.debug('popup.open invoked with options', options);
+    //if (debug)
+        console.debug('popup.open invoked with options', options);
 
     // lazy load dependencies
     if (window.jQuery === undefined) {
         window.jQuery = await import(/* webpackChunkName: "jquery" */ 'jquery');
         window.jQuery = window.jQuery.default;
+        if (debug) console.debug('jQuery loaded', typeof window.jQuery);
     }
 
-    if (debug) console.debug('jQuery loaded', typeof window.jQuery);
+    $body = $body || jQuery('body');
+    $window = $window || jQuery(window);
 
-    if (window.anime === undefined) {
-        window.anime = await import(/* webpackChunkName: "anime" */ 'animejs/lib/anime.es.js');
-        window.anime = window.anime.default;
-    }
-
-    if (debug) console.debug('animejs loaded', typeof window.anime);
-
-    const domUtils = await import(/* webpackChunkName: "dom-utils" */ '@aamasri/dom-utils');
-
-    if (debug) console.debug('dom-utils loaded', typeof domUtils);
-
-    $body = $body || domUtils.$cache().$body;
-    $window = $window || domUtils.$cache().$window;
-
-    if (!options.title && !options.source) {
-        options.title = 'Popup Cheat Sheet';
+    if (!options.source)
         options.source = usageInstructions;
-    }
 
     // variables for constructing the popup UI component
     let popupId = `popup-${++popupCount}`;
     let popupBody;
-    let popupTitle = options.title || '';
 
     // autodetect if specified source is an url (ie starts with "http" or "/")
     const sourceIsUrl = typeof options.source === 'string' && (/^https?:\/\/[a-z]+/.test(options.source) || /^\/[a-z]+/.test(options.source));
@@ -81,12 +68,10 @@ async function open(options) {
             const sourceElement = document.querySelector(options.source);
             if (debug) console.debug('source is an element');
 
-            if (sourceElement) {
+            if (sourceElement)
                 popupBody = sourceElement.innerHTML;
-                popupTitle = popupTitle || elementTitle(sourceElement) || '';
-            }
 
-            if (debug) console.debug(`popup title:${popupTitle} \n\n body:${popupBody}`);
+            if (debug) console.debug(`popup body:${popupBody}`);
         } catch (error) {
             // ignore error - just means options.source isn't a selector
             if (debug) console.debug(`source "${options.source}" is not a selector`);
@@ -95,13 +80,40 @@ async function open(options) {
         popupBody = popupBody || options.source || '';
     }
 
+    // loading anime.js now avoids the delay that reveals the un-positioned popup
+    if (window.anime === undefined) {
+        window.anime = await import(/* webpackChunkName: "anime" */ 'animejs/lib/anime.es.js');
+        window.anime = window.anime.default;
+        //if (debug)
+        console.debug('animejs loaded', typeof window.anime);
+    }
+
+    let $popup;
+    let $lastPopup = null;
     options.replace = typeof options.replace === 'undefined' || !!options.replace;  // default true
     if (options.replace)
-        closeAll();     // close all existing popups
+        $lastPopup = jQuery(closeAllButLast());  // close all (except last) popup - recycling the last popup for a smooth transition
 
-    // build the popup UI
-    const modalDiv = options.modal ? `<div class="popup-modal" data-for="${popupId}"></div>` : '';
-    const closeButton = options.showCloseButton ? `
+    const repurposeLastPopup = options.replace && $lastPopup.length && $lastPopup.is(':visible');
+    if (repurposeLastPopup) {
+        $popup = $lastPopup;
+        $popup.attr('data-created', Date.now());
+
+        // pause/undo animation
+
+        if (lastAnimation) {
+            console.debug(`pausing/rewinding any close animation`, lastAnimation);
+            lastAnimation.pause();
+            lastAnimation = null;
+        }
+
+        $popup.find('.popup-body').html(popupBody || 'Loading •••');
+        $popup.find('.arrow').css({ 'display': 'none', 'margin': 'auto' }).removeClass('top bottom left right');  // reset arrow
+        if (debug) console.debug(`popup ${popupId} being repurposed`, $popup.length);
+    } else {
+        // build the popup from scratch
+        const modalDiv = options.modal ? `<div class="popup-modal" data-for="${popupId}"></div>` : '';
+        const closeButton = options.showCloseButton ? `
         <div class="icons">
             <span class="icon-close">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 116 116">
@@ -110,15 +122,15 @@ async function open(options) {
             </span>
         </div>` : '';
 
+        const createdData = `data-created="${Date.now()}"`;
 
-    const createdData = `data-created="${Date.now()}"`;
+        let classes = [];
+        if (options.classes && typeof options.classes === 'string') classes.push(options.classes);
 
-    let classes = [];
-    if (options.classes && typeof options.classes === 'string') classes.push(options.classes);
+        const attributes = options.attributes || '';
 
-    const attributes = options.attributes || '';
-
-    let $popup = jQuery(`${modalDiv}
+        // reuse any existing popup
+        $popup = jQuery(`${modalDiv}
                         <div id="${popupId}" class="popup-box ${classes.join(' ')}" ${attributes} ${createdData}>
                             <div class="arrow"></div>
                             
@@ -129,26 +141,27 @@ async function open(options) {
                             </div>
                         </div>`);
 
-    $popup.appendTo($body);
+        $popup.appendTo($body);
 
-    // apply z-index to modal underlay and popup box
-    const onTop = domUtils.onTopZIndex();
-    if (onTop)
-        $popup.css('z-index', onTop);
-
-
-    if (options.modal)
-        $popup = $body.find(`#${popupId}`);    // exclude the modal overlay div
-
-    if (debug) console.debug(`popup ${popupId} appended to body`, $popup.length);
+        // apply z-index to modal underlay and popup box
+        const onTop = onTopZIndex();
+        if (onTop)
+            $popup.css('z-index', onTop);
 
 
-    initPopupListeners();   // popup events: fullscreen, close(ESC, blur, close icon)
+        if (options.modal)
+            $popup = $body.find(`#${popupId}`);    // exclude the modal overlay div
 
-    if (options.onClose)
-        bindCloseCallback($popup, options.onClose);
+        if (debug) console.debug(`popup ${popupId} appended to body`, $popup.length);
 
-    let openAnimation = openAnimatePopup($popup, options.target);
+        initPopupListeners();   // popup events: fullscreen, close(ESC, blur, close icon)
+
+        if (options.onClose)
+            bindCloseCallback($popup, options.onClose);
+    }
+
+
+    let openAnimation = openAnimatePopup($popup, options.target, repurposeLastPopup);
 
     // fetch the url content
     if (sourceIsUrl) {
@@ -190,7 +203,7 @@ async function open(options) {
 
         // animate popup open again as it's remotely loaded content is probably bigger
         openAnimation.pause();
-        openAnimation = openAnimatePopup($popup, options.target);
+        openAnimation = openAnimatePopup($popup, options.target, repurposeLastPopup);
     }
 
     await openAnimation.finished;   // resolved on animation complete
@@ -203,7 +216,7 @@ async function open(options) {
 
 
 
-function openAnimatePopup($popup, target=null) {
+async function openAnimatePopup($popup, target=null, repurposeLastPopup=false) {
     if (debug) console.debug(`openAnimatePopup `, $popup[0].id);
 
     // popup sizing
@@ -251,7 +264,11 @@ function openAnimatePopup($popup, target=null) {
         };
     }
 
-    return anime(animeConfig);   // run open animation
+    console.log('skip open animation as repurposing last popup', repurposeLastPopup);
+    if (repurposeLastPopup)
+        return true;
+    else
+        return anime(animeConfig);   // run open animation
 }
 
 
@@ -268,6 +285,7 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
 
     // in the case of loading content from a remote endpoint, this would be a second positioning
     // pass, so we will unlock the width in order to access the true popup width
+    const $arrow = $popup.find('.arrow');
     $popup.css('width', 'auto');
 
     const POPUP_WIDTH = $popup.outerWidth();
@@ -284,14 +302,13 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     const top = targetViewOffset.top >= targetViewOffset.bottom;
     const horizontalSpace = (left ? targetViewOffset.left : targetViewOffset.right) - TARGET_MARGIN - PAGE_MARGIN;
     const verticalSpace = (top ? targetViewOffset.top : targetViewOffset.bottom) - TARGET_MARGIN - PAGE_MARGIN;
-    let beside = horizontalSpace >= POPUP_WIDTH;  // prefer positioning beside the target
-    if (beside && (targetViewOffset.top < TARGET_MARGIN || targetViewOffset.bottom < TARGET_MARGIN))
-        beside = false;     // we need a bit more space above or below the target to show popup beside it
+    let positionBesideTarget = horizontalSpace >= POPUP_WIDTH;  // prefer positioning beside the target
+    if (positionBesideTarget && (targetViewOffset.top < TARGET_MARGIN || targetViewOffset.bottom < TARGET_MARGIN))
+        positionBesideTarget = false;     // we need a bit more space above or below the target to show popup beside it
 
     if (POPUP_WIDTH > horizontalSpace && POPUP_HEIGHT > verticalSpace)
         return;    // abort positioning (popup too large to fit beside/above/below the target)
 
-    const $arrow = $popup.find('.arrow');
     $arrow.css('display', 'block');  // target is visible, so we're going to point to it
 
     if (debug) console.log(`positionPopup 
@@ -322,7 +339,7 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         
         show on left: ${left}
         show on top: ${top}
-        show beside: ${beside}
+        space beside: ${positionBesideTarget}
     `);
 
 
@@ -344,7 +361,7 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     const HALF_ARROW_SIZE = Math.sqrt(Math.pow($arrow.outerWidth(), 2) * 2) / 2;
 
     // there are 8 possible positions for the popup (beside/above/below/left/right of the target)
-    if (beside) {
+    if (positionBesideTarget) {
         if (left) {
             // position to left of target
             popupCss.left = targetOffset.left - POPUP_WIDTH - HALF_ARROW_SIZE - TARGET_MARGIN;
@@ -374,10 +391,18 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         arrow.style.marginTop = arrowTop + 'px';
 
     } else {
-        // there's not enough space beside the target, so position above/below the target
-        // aligned to document left/right edge (to prevent overflow)
+        // there's not enough space beside the target, or the target is close to the top/bottom of the viewport,
+        // so position above/below the target aligned to document left/right edge (to prevent overflow)
         popupCss.maxWidth = WINDOW_WIDTH - (PAGE_MARGIN * 2);
-        popupCss.left = (WINDOW_WIDTH / 2) - (POPUP_WIDTH / 2) + $window.scrollLeft();
+        popupCss.left = targetOffset.left + TARGET_WIDTH + TARGET_MARGIN - POPUP_WIDTH + $window.scrollLeft();  // align horizontally relative to the target
+        if (debug) console.log(`popup left margin`, popupCss.left);
+
+        // if popup is squished up against left edge, then center it horizontally on page
+        if ((popupCss.left + $window.scrollLeft()) < PAGE_MARGIN) {
+            if (debug) console.log(`popup is squished up against left edge, centering it`);
+            popupCss.width = POPUP_WIDTH;   // because we depend on the popup width not changing
+            popupCss.left = (WINDOW_WIDTH / 2) - (POPUP_WIDTH / 2) + $window.scrollLeft();
+        }
 
         let arrowLeft = targetOffset.left - popupCss.left + (TARGET_WIDTH / 2) - $arrow.position().left - HALF_ARROW_SIZE;
         arrowLeft = (arrowLeft < 0) ? 0 : arrowLeft;
@@ -459,6 +484,28 @@ function closeLast() {
 }
 
 
+
+/** close/destroy all except last popup
+ * @returns Element | null
+ */
+function closeAllButLast() {
+    let popups = getAllPopups();
+    popups = [...popups];   // convert NodeList to array
+    if (debug) console.log(`closeAllButLast popups`, popups);
+    const lastPopup = popups.length ? popups.pop() : null;
+
+    if (popups.length) {
+        popups.forEach((popup) => {
+            getRelatedModal(popup).remove();
+            popup.remove();
+        });
+    }
+
+    return lastPopup;
+}
+
+
+
 /** close/destroy the specified popup
  * @param {object|jQuery|HTMLElement|Element } popup
  * @returns {void}
@@ -496,11 +543,16 @@ function close(popup) {
         easing: 'linear'
     };
 
-    anime(animeConfig).finished.then(() => {
-        popup.remove();
+    lastAnimation = anime(animeConfig);
+    lastAnimation.finished.then(() => {
+        if (lastAnimation) {
+            lastAnimation = null;
+            console.debug(`close animation finished. Removing popup`, popup.id);
+            popup.remove();
 
-        if (relatedModal)
-            relatedModal.remove();
+            if (relatedModal)
+                relatedModal.remove();
+        }
     });
 
 }
@@ -532,7 +584,7 @@ function initPopupListeners() {
 
     blurHandlerBound = true;
 
-    jQuery(document).on('click', (event) => {
+    jQuery(document).on('click', event => {
         const $clicked = jQuery(event.target);
 
         if (debug) console.debug(`clicked on ${$clicked[0].nodeName} "${$clicked.text().substring(0,10)}.."`);
@@ -581,6 +633,7 @@ function initPopupListeners() {
             return;
         }
 
+        console.log(` click outside popup -> closing last popup`);
         closeLast();    // click was not on a popup or modal
 
     }).on('keydown', (event) => {
@@ -619,15 +672,6 @@ function bindCloseCallback($popup, callback) {
 
 
 
-function elementTitle(element) {
-    if (element instanceof jQuery)
-        return element[0].title || element.data('title') || '';
-    else
-        return element.title || jQuery(element).data('title') || '';
-}
-
-
-
 const usageInstructions = `Usage instructions for developers: 
 <pre style="color:#888; font-size: 12px;">
 options object {
@@ -649,4 +693,4 @@ popup.open(options).then(function() {
 </pre>`;
 
 
-export { open, close, closeLast, closeAll };
+export { open, close, closeLast, closeAll, closeAllButLast };
