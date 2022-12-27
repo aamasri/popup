@@ -286,7 +286,8 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     // in the case of loading content from a remote endpoint, this would be a second positioning
     // pass, so we will unlock the width in order to access the true popup width
     const $arrow = $popup.find('.arrow');
-    $popup.css('width', 'auto');
+    const previousWidth = $popup.css('width');   // save to enable a width transition
+    $popup.css('width', 'auto');                // unlock width
 
     const POPUP_WIDTH = $popup.outerWidth();
     const POPUP_HEIGHT = $popup.outerHeight();
@@ -342,6 +343,8 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         space beside: ${positionBesideTarget}
     `);
 
+    if (previousWidth !== 'auto')
+        $popup.css('width', previousWidth);    // restore previous width (to enable a width transition)
 
     const position = ($target.css('position') === 'fixed') ? 'fixed' : 'absolute';
     const targetOffset = (position === 'fixed') ? targetViewOffset : targetDocOffset;
@@ -353,6 +356,7 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         right: 'auto',
         bottom: 'auto',
         left: 'auto',
+        width: POPUP_WIDTH + 'px',  // fixing the popup width avoids misalignment and allows width transitions
         zIndex: onTopZIndex()
     };
 
@@ -365,7 +369,6 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         if (left) {
             // position to left of target
             popupCss.left = targetOffset.left - POPUP_WIDTH - HALF_ARROW_SIZE - TARGET_MARGIN;
-            popupCss.width = POPUP_WIDTH;   // because we depend on the popup width not changing
             $arrow.addClass('right')    // arrow on right side of popup
         } else {
             // position to right of target
@@ -400,7 +403,6 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         // if popup is squished up against left edge, then center it horizontally on page
         if ((popupCss.left + $window.scrollLeft()) < PAGE_MARGIN) {
             if (debug) console.log(`popup is squished up against left edge, centering it`);
-            popupCss.width = POPUP_WIDTH;   // because we depend on the popup width not changing
             popupCss.left = (WINDOW_WIDTH / 2) - (POPUP_WIDTH / 2) + $window.scrollLeft();
         }
 

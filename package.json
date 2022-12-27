@@ -1,7 +1,7 @@
 {
   "name": "@aamasri/popup",
-  "version": "1.1.0",
-  "versionDescription": "Added capability to recycle existing popups for smoother transitions.",
+  "version": "1.1.1",
+  "versionDescription": "Added width transition effect when recycling popups.",
   "scripts": {
     "build-development": "webpack --mode development",
     "build-production": "webpack --mode production",

@@ -50,6 +50,10 @@
 <button id="popup4" style="right: 10%; bottom: 10rem;">Popup with content<br>from element content</button>
 <button id="popup3" style="left: 10%; bottom: 10rem;">Right Bottom Target</button>
 
+<div id="popup3Content" hidden>
+    minimal content
+</div>
+
 <div id="popup4Content" hidden>
     eg.<br>
     <pre>
@@ -105,7 +109,7 @@
 
     document.getElementById('popup3').onclick = event => {
         popup.open({
-            source: '#popup4Content',
+            source: '#popup3Content',
             target: event.target,
         }).then();
     };
