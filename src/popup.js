@@ -108,7 +108,7 @@ async function open(options) {
         }
 
         $popup.find('.popup-body').html(popupBody || 'Loading •••');
-        $popup.find('.arrow').css({ 'display': 'none', 'margin': 'auto' }).removeClass('top bottom left right');  // reset arrow
+        $popup.find('.arrow').css({ 'display': 'none' }).removeClass('top bottom left right');  // reset arrow
         if (debug) console.debug(`popup ${popupId} being repurposed`, $popup.length);
     } else {
         // build the popup from scratch
@@ -392,6 +392,7 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         let arrowTop = targetOffset.top - popupCss.top + (TARGET_HEIGHT / 2) - $arrow.position().top - HALF_ARROW_SIZE;
         arrowTop = (arrowTop < 0) ? 0 : arrowTop;
         arrow.style.marginTop = arrowTop + 'px';
+        arrow.style.marginLeft = 'auto';
 
     } else {
         // there's not enough space beside the target, or the target is close to the top/bottom of the viewport,
@@ -409,6 +410,7 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         let arrowLeft = targetOffset.left - popupCss.left + (TARGET_WIDTH / 2) - $arrow.position().left - HALF_ARROW_SIZE;
         arrowLeft = (arrowLeft < 0) ? 0 : arrowLeft;
         arrow.style.marginLeft = arrowLeft + 'px';
+        arrow.style.marginTop = 'auto';
 
         if (top) {
             // top left       |-------|

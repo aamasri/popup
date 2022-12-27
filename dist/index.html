@@ -46,6 +46,7 @@
 
 <button id="popup0">Cheat sheet (no target)</button>
 <button id="popup1" style="right: 10rem; top: 1rem;">Simple Popup with<br>callback on close</button>
+<button id="popup1-1" style="right: 20rem; top: 1rem;">Simple Popup with<br>callback on close</button>
 <button id="popup2" style="top: 20%; left: 10rem; background-color: red; display: none;">Plain Popup</button>
 <button id="popup4" style="right: 10%; bottom: 10rem;">Popup with content<br>from element content</button>
 <button id="popup3" style="left: 10%; bottom: 10rem;">Right Bottom Target</button>
@@ -79,6 +80,15 @@
         popup.open();
     };
 
+
+    document.getElementById('popup1-1').onclick = event => {
+        popup.open({
+            source: 'smaller popup',
+            target: event.target,
+        }).then(() => {
+            console.log('popup launched');
+        });
+    };
 
 
 
