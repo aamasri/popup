@@ -11,10 +11,25 @@
             padding: 10px 3%;
             width: 1000px;
             height: 1200px;
+            box-sizing: border-box;
         }
 
+        menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 90%;
+            margin: 0;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 { position: fixed; top: 30%; width: 100%; text-align: center; }
+
+
         button {
-            position: absolute;
             border: none;
             border-radius: 6px;
             background-color: #5bc0de;
@@ -31,11 +46,13 @@
         #callback-messages {
             position: fixed;
             left: 15%;
-            bottom: 14rem;
+            top: 14rem;
             height: 30vh;
             color: #AAA;
             overflow: auto;
         }
+
+        p, strong { margin: 0.5em 0; }
     </style>
 <script defer="defer" src="/popup.js"></script></head>
 
@@ -44,19 +61,21 @@
 
 <h1>Popup Demo</h1>
 
-<button id="popup0">Cheat sheet (no target)</button>
-<button id="popup1" style="right: 10rem; top: 1rem;">Simple Popup with<br>callback on close</button>
-<button id="popup1-1" style="right: 20rem; top: 1rem;">Simple Popup with<br>callback on close</button>
-<button id="popup2" style="top: 20%; left: 10rem; background-color: red; display: none;">Plain Popup</button>
-<button id="popup4" style="right: 10%; bottom: 10rem;">Popup with content<br>from element content</button>
-<button id="popup3" style="left: 10%; bottom: 10rem;">Right Bottom Target</button>
+<menu>
+    <button id="popup0">Cheat sheet (no target)</button>
+    <button id="popup1">Mouseover Popup with<br>callback on close</button>
+    <button id="popup1-1">Smaller Popup</button>
+</menu>
+<button id="popup2" class="absolute-positioning" style="position: absolute; top: 20%; left: 10rem; background-color: red; display: none;">Plain Popup</button>
+<button id="popup4" class="absolute-positioning" style="position: absolute; right: 10%; bottom: 10rem;">Popup with content<br>from element content</button>
+<button id="popup3" class="absolute-positioning" style="position: absolute; left: 10%; bottom: 10rem;">Right Bottom Target</button>
 
 <div id="popup3Content" hidden>
     minimal content
 </div>
 
 <div id="popup4Content" hidden>
-    eg.<br>
+    <p>eg.</p>
     <pre>
     &lt;div id="popup" hidden&gt;
         Popup Content
@@ -77,7 +96,7 @@
     let clickCount = 0;
 
     document.getElementById('popup0').onclick = () => {
-        popup.open();
+        popup.open({ debug: true });
     };
 
 
@@ -92,11 +111,11 @@
 
 
 
-    document.getElementById('popup1').onclick = event => {
+    document.getElementById('popup1').onmouseover = event => {
         popup.open({
             source: popup1Content + `<span style="color:silver;">Popup count: ${++clickCount}</span>`,
             target: event.target,
-            onClose: () => { jQuery('#callback-messages').prepend(`Callback says: simple popup closed<br>`); },
+            onClose: () => { jQuery('#callback-messages').prepend(`Callback says: mouseover popup closed<br>`); },
             attributes: 'data-ignore-events="true"',
         }).then(() => {
             console.log('popup launched');
@@ -134,7 +153,7 @@
     };
 
 
-    const popup1Content = `This popup was launched programmatically with javascript eg.<br>
+    const popup1Content = `<p>This popup was launched programmatically with javascript eg.</p>
 <pre>
 popup.open({
     source: 'Sample HTML content...',

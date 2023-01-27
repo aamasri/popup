@@ -33,7 +33,7 @@ $maxHeight = 75vh
     position fixed
     top 50vh
     left 50vw
-    transform translateX(-50%) translateY(-50%)
+    transform translateX(-50%) translateY(-50%) scale(1)
     border var(--popupBorder, $popupBorder)
     box-shadow var(--popupBoxShadow, $popupBoxShadow)
     border-radius var(--popupBorderRadius, $popupBorderRadius)
@@ -51,7 +51,7 @@ $maxHeight = 75vh
     /* new scrollbar css spec & Firefox */
     scrollbar-width thin
     scrollbar-color var(--popupIconColor, $popupIconColor) var(--popupBackground, $popupBackground)   /* scroll thumb & track */
-    transition inset 300ms, width 200ms
+    transition all 300ms
 
     .arrow
         display none
@@ -132,7 +132,6 @@ $maxHeight = 75vh
 
     .popup-body
         position relative
-        padding 1rem 0
         height calc(100% - 3rem)
 
         iframe

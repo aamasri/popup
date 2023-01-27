@@ -43,7 +43,7 @@ Popup is a javascript package built for and using the ES6 module system, but it'
 <body>
     ...
 
-    <script src="/js/popup/popup.js"></script>
+    <script src="/js/popup/popup.mjs"></script>
 </body>
 </html>
 
@@ -180,15 +180,13 @@ Popup supports [npm](https://www.npmjs.com/package/popup) under the name `@aamas
 Popup depends on 2 external packages:
 <ol>
 <li>jquery</li>
-<li>animejs</li>
 <li>@aamasri/dom-utils</li>
-<li>@aamasri/busy-js</li>
 </ol>
 These dependencies are bundled (as separate pre-built 'chunks') in this package's "dist" folder.  
 <br>
 Invoking the popup() function will dynamically load these dependencies at run-time (if these scripts don't already exist on the page) and they'll be added to the global window object.
 <br><br>
-If your page already loads the jQuery, animejs, @aamasri/busy-js, or @aamasri/dom-utils packages, popup will use them instead.
+If your page already loads the jQuery or @aamasri/dom-utils packages, popup will use them instead.
 
 
 <br><br>
