@@ -216,8 +216,6 @@ function openAnimatePopup($popup, target=null, repurposeLastPopup=false) {
     if (debug) console.debug(`openAnimatePopup `, $popup[0].id);
 
     // popup sizing
-    $popup.width('auto');   // reset in case we're re-cycling a popup
-    $popup.height('auto');   // reset in case we're re-cycling a popup
     const popupWidth = $popup.width();
     const popupHeight = $popup.height();
     const popupArea = popupHeight * popupWidth;
@@ -255,7 +253,7 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     if (!$popup.length)
         return;
 
-    $popup.css({ width: 'auto', height: 'auto' });      // unlock repurposed popup
+    $popup.css({ width: 'auto' });      // unlock repurposed popup
 
     if (!$target.length || !isVisible($target)) {
         if (debug) console.log(' centering');
@@ -273,8 +271,8 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     // in the case of loading content from a remote endpoint, this would be a second positioning
     // pass, so we will unlock the width in order to access the true popup width
     const $arrow = $popup.find('.arrow');
-    const previousWidth = $popup.css('width');      // save to enable a width transition
-    const previousHeight = $popup.css('height');    // save to enable a height transition
+    $popup.css('width', 'auto');                // unlock width
+    $popup.css('height', 'auto');                // unlock height
 
     const POPUP_WIDTH = $popup.outerWidth();
     const POPUP_HEIGHT = $popup.outerHeight();
@@ -329,12 +327,6 @@ function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
         show on top: ${top}
         space beside: ${positionBesideTarget}
     `);
-
-    if (previousWidth !== 'auto')
-        $popup.css('width', previousWidth);     // restore previous width (to enable a width transition)
-    if (previousHeight !== 'auto')
-        $popup.css('height', previousHeight);   // restore previous height (to enable a height transition)
-
 
     const position = ($target.css('position') === 'fixed') ? 'fixed' : 'absolute';
     const targetOffset = (position === 'fixed') ? targetViewOffset : targetDocOffset;
@@ -528,7 +520,7 @@ function close(popup) {
     // click that launched a popup shouldn't also remove it
     const createdAt = popup.getAttribute('data-created');
     if ((Date.now() - createdAt) < 500) {
-        if (debug) console.debug(`    cancelled because it's less than a second old`);
+        if (debug) console.debug(`    cancelled close popup because it's less than a second old`);
         return;
     }
 

@@ -1,7 +1,7 @@
 {
   "name": "@aamasri/popup",
-  "version": "1.1.3",
-  "versionDescription": "Added debugging for popup arrow misallignment. Fixed positioning transition from centre to target. prevent unneccesary content refreshes. Removed anime.js.",
+  "version": "1.1.4",
+  "versionDescription": "Unfixed height to allow for popup body assets that haven't loaded.",
   "scripts": {
     "build-development": "webpack --mode development",
     "build-production": "webpack --mode production",
