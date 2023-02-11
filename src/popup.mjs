@@ -494,7 +494,9 @@ function closeAllButLast() {
 
     if (popups.length) {
         popups.forEach((popup) => {
-            getRelatedModal(popup).remove();
+            const modal = getRelatedModal(popup);
+            if (modal)
+                modal.remove();
             popup.remove();
         });
     }

@@ -1,7 +1,7 @@
 {
   "name": "@aamasri/popup",
-  "version": "1.1.4",
-  "versionDescription": "Unfixed height to allow for popup body assets that haven't loaded.",
+  "version": "1.1.5",
+  "versionDescription": "Fixed error in fn closeAllButLast when it isn't modal.",
   "scripts": {
     "build-development": "webpack --mode development",
     "build-production": "webpack --mode production",
@@ -15,7 +15,7 @@
     "@babel/plugin-transform-runtime": "^7.19.6",
     "@babel/preset-env": "^7.20.2",
     "autoprefixer": "^10.4.13",
-    "babel-loader": "^9.1.0",
+    "babel-loader": "^9.1.x",
     "css-loader": "^6.7.3",
     "html-webpack-plugin": "^5.3.1",
     "mini-css-extract-plugin": "^2.7.2",
