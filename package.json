@@ -1,7 +1,7 @@
 {
   "name": "@aamasri/popup",
-  "version": "1.1.5",
-  "versionDescription": "Fixed error in fn closeAllButLast when it isn't modal.",
+  "version": "1.1.7",
+  "versionDescription": "Upgraded dom-utils package.",
   "scripts": {
     "build-development": "webpack --mode development",
     "build-production": "webpack --mode production",

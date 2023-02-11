@@ -1,6 +1,6 @@
 /*
  * popup.js
- * (c) 2022 Ananda Masri
+ * (c) 2022-2023 Ananda Masri
  * Released under the MIT license
  * auro.technology/open-source/popup
  */

@@ -67,7 +67,7 @@ module.exports = (env, argv) => {
         entry: './src/popup-global.js',
         output: {
             path: path.resolve(__dirname, './dist'),
-            filename: 'popup.js',
+            filename: 'popup.mjs',
             publicPath: '/',                        // where browser will request the webpack files
             chunkFilename: 'chunk_[name].js',       // chunk filename
             clean: true,                            // clean the output directory before emit

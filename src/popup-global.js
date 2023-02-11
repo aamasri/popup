@@ -1,5 +1,5 @@
 /*
- * global loader (attaches Growl to the global window object)
+ * global loader (attaches popup to the global window object)
  */
 
 const debug = false;
