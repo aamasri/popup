@@ -466,11 +466,18 @@ function close() {
         modal.style.display = 'none';
 
     // minimize popup
+    let transformStyle = popup.style.transform;
+    if (transformStyle.includes('scale(1)'))
+        transformStyle = transformStyle.replace('scale(1)', 'scale(0)');
+    else
+        transformStyle = transformStyle + ' scale(0)';
+
+    popup.style.transform = transformStyle;
     popup.style.opacity = '0';
-    popup.style.transform = popup.style.transform.replace('scale(1)', 'scale(0)');
 }
 
 
+/////////////////////// DEPRECATED CLOSE METHODS ///////////////////////
 function closeLast() {
     close();
     console.warn('package @aamasri/popup method closeLast() is deprecated because there is only ONE popup instance - use popup.close() instead');
@@ -481,7 +488,11 @@ function closeAll() {
 }
 function closeAllButLast() {
     console.warn('package @aamasri/popup method closeAllButLast() is deprecated because there is only ONE popup instance.');
+    return document.querySelector('.popup-box');
 }
+////////////////////////////////////////////////////////////////////////
+
+
 
 
 // setup popup blur event detection once (on body element)
