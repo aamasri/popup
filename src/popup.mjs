@@ -11,7 +11,7 @@ import { getDocumentOffset, getViewportOffset, isVisible, onTopZIndex } from '@a
 
 
 // module scope vars
-let debug = true;
+let debug = false;
 let loadUrlBusy;
 let $body;
 let $window;
@@ -102,7 +102,7 @@ async function open(options) {
         const originalTransition = existingPopup.style.transition;
         existingPopup.style.transition = 'none';
         existingPopup.style.opacity = '1';
-        existingPopup.style.transform = existingPopup.style.transform.replace('scale(0)', '');
+        existingPopup.style.transform = existingPopup.style.transform.replace(/scale[(0-9.)]+/g, '').trim();
         existingPopup.offsetWidth; // force reflow
         existingPopup.style.transition = originalTransition;
 
@@ -453,25 +453,16 @@ function close() {
 
     // click that launched a popup shouldn't also remove it
     const createdAt = popup.dataset.created;
+    if (debug) console.debug(`    popup is ${Date.now() - createdAt} mS old`);
     if ((Date.now() - createdAt) < 500) {
         if (debug) console.debug(`    cancelled close popup because it's less than a second old`);
         return;
     }
 
-    if (debug) console.debug(`    popup is ${Date.now() - createdAt} mS old`);
-
-    const modal = document.querySelector('.popup-modal');
-    if (modal)
-        modal.style.display = 'none';
-
-    // minimize popup
-    let transformStyle = popup.style.transform;
-    if (transformStyle.includes('scale(1)'))
-        transformStyle = transformStyle.replace('scale(1)', 'scale(0)');
-    else
-        transformStyle = transformStyle + ' scale(0)';
-
-    popup.style.transform = transformStyle;
+    // minimize popup/modal
+    document.querySelector('.popup-modal').style.display = 'none';
+    popup.style.transform = popup.style.transform.replace(/scale[(0-9.)]+/g, '').trim();
+    popup.style.transform += ' scale(0)';
     popup.style.opacity = '0';
 }
 
