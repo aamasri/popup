@@ -13,11 +13,8 @@ import { getDocumentOffset, getViewportOffset, isVisible, onTopZIndex } from '@a
 // module scope vars
 let debug = false;
 let loadUrlBusy;
-let popupCount = 0;
 let $body;
 let $window;
-let preventClose = false;
-let removeClosedPopupTimeout;
 
 
 /** launches a content popup box configured by an options object
@@ -28,7 +25,6 @@ let removeClosedPopupTimeout;
  * @param {boolean|undefined} options.modal - (default false) page background dimming
  * @param {Element|string|object|undefined} options.target - the target: selector, jQuery object or element
  * @param {boolean|undefined} options.showCloseButton - (default false) whether to show the close button
- * @param {boolean|undefined} options.replace - (default true) whether to recycle an existing popup or layer up
  * @param {function|string|undefined} options.onClose - (optional) function or eval(string) callback to execute after popup dismissed
  * @param {string|undefined} options.classes - (optional) classes to apply to the popup
  * @param {string|undefined} options.attributes - (optional) attributes to apply to the popup
@@ -44,8 +40,6 @@ async function open(options) {
 
     if (debug) console.debug('popup.open invoked with options', options);
 
-    window.clearTimeout(removeClosedPopupTimeout);
-
     // lazy load dependencies
     if (window.jQuery === undefined) {
         window.jQuery = await import(/* webpackChunkName: "jquery" */ 'jquery');
@@ -60,7 +54,6 @@ async function open(options) {
         options.source = usageInstructions;
 
     // variables for constructing the popup UI component
-    let popupId = `popup-${++popupCount}`;
     let popupBody;
 
     // autodetect if specified source is an url (ie starts with "http" or "/")
@@ -87,17 +80,17 @@ async function open(options) {
     }
 
     let $popup;
-    let $lastPopup = null;
-    options.replace = typeof options.replace === 'undefined' || !!options.replace;  // default true
-    if (options.replace)
-        $lastPopup = jQuery(closeAllButLast());  // close all (except last) popup - recycling the last popup for a smooth transition
+    let existingPopup = document.querySelector('.popup-box');
+    if (existingPopup) {
+        // reverse any close animation
+        existingPopup.style.opacity = '1';
+        existingPopup.style.transform = existingPopup.style.transform.replace('scale(0)', 'scale(1)');
 
-    const repurposeLastPopup = options.replace && $lastPopup.length && $lastPopup.is(':visible');
-    if (repurposeLastPopup) {
-        preventClose = true;    // popup mustn't be closed while being repurposed.
+        $popup = jQuery(existingPopup);
+        existingPopup.dataset.created = Date.now().toString();
 
-        $popup = $lastPopup;
-        $popup.attr('data-created', Date.now());
+        const existingModal = document.querySelector('.popup-modal');
+        existingModal.style.display = options.modal ? 'block' : 'none';
 
         // only replace content if it's changed (avoids network hits from reloaded assets)
         const $popupBody = $popup.find('.popup-body');
@@ -107,18 +100,15 @@ async function open(options) {
             $popupBody.html(newContent);
 
         $popup.find('.arrow').css({ 'display': 'none' }).removeClass('top bottom left right');  // reset arrow
-        if (debug) console.debug(`popup ${popupId} being repurposed`, $popup.length);
+        if (debug) console.debug(`popup has been repurposed`);
     } else {
         // build the popup from scratch
-        const modalDiv = options.modal ? `<div class="popup-modal" data-for="${popupId}"></div>` : '';
-        const closeButton = options.showCloseButton ? `
-        <div class="icons">
-            <span class="icon-close">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 116 116">
-                    <path d="M35.76335,28.59668c-2.91628,0.00077 -5.54133,1.76841 -6.63871,4.47035c-1.09737,2.70194 -0.44825,5.79937 1.64164,7.83336l45.09961,45.09961l-45.09961,45.09961c-1.8722,1.79752 -2.62637,4.46674 -1.97164,6.97823c0.65473,2.51149 2.61604,4.4728 5.12753,5.12753c2.51149,0.65473 5.18071,-0.09944 6.97823,-1.97165l45.09961,-45.09961l45.09961,45.09961c1.79752,1.87223 4.46675,2.62641 6.97825,1.97168c2.5115,-0.65472 4.47282,-2.61605 5.12755,-5.12755c0.65472,-2.5115 -0.09946,-5.18073 -1.97168,-6.97825l-45.09961,-45.09961l45.09961,-45.09961c2.11962,-2.06035 2.75694,-5.21064 1.60486,-7.93287c-1.15207,-2.72224 -3.85719,-4.45797 -6.81189,-4.37084c-1.86189,0.05548 -3.62905,0.83363 -4.92708,2.1696l-45.09961,45.09961l-45.09961,-45.09961c-1.34928,-1.38698 -3.20203,-2.16948 -5.13704,-2.1696z"/>
-                </svg>
-            </span>
-        </div>` : '';
+        const modalDiv = `<div class="popup-modal" style="display: ${options.modal ? 'block' : 'none'}"></div>`;
+        const closeButton = `<span class="icon-close" style="display: ${options.showCloseButton ? 'none' : 'block'}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="28 28 116 116">
+                                            <path d="M35.76335,28.59668c-2.91628,0.00077 -5.54133,1.76841 -6.63871,4.47035c-1.09737,2.70194 -0.44825,5.79937 1.64164,7.83336l45.09961,45.09961l-45.09961,45.09961c-1.8722,1.79752 -2.62637,4.46674 -1.97164,6.97823c0.65473,2.51149 2.61604,4.4728 5.12753,5.12753c2.51149,0.65473 5.18071,-0.09944 6.97823,-1.97165l45.09961,-45.09961l45.09961,45.09961c1.79752,1.87223 4.46675,2.62641 6.97825,1.97168c2.5115,-0.65472 4.47282,-2.61605 5.12755,-5.12755c0.65472,-2.5115 -0.09946,-5.18073 -1.97168,-6.97825l-45.09961,-45.09961l45.09961,-45.09961c2.11962,-2.06035 2.75694,-5.21064 1.60486,-7.93287c-1.15207,-2.72224 -3.85719,-4.45797 -6.81189,-4.37084c-1.86189,0.05548 -3.62905,0.83363 -4.92708,2.1696l-45.09961,45.09961l-45.09961,-45.09961c-1.34928,-1.38698 -3.20203,-2.16948 -5.13704,-2.1696z"/>
+                                        </svg>
+                                    </span>`;
 
         const createdData = `data-created="${Date.now()}"`;
 
@@ -129,10 +119,12 @@ async function open(options) {
 
         // reuse any existing popup
         $popup = jQuery(`${modalDiv}
-                        <div id="${popupId}" class="popup-box ${classes.join(' ')}" ${attributes} ${createdData}>
+                        <div class="popup-box ${classes.join(' ')}" ${attributes} ${createdData}>
                             <div class="arrow"></div>
                             
-                            ${closeButton}
+                            <div class="icons">
+                                ${closeButton}
+                            </div>
                             
                             <div class="popup-body">
                                 ${(popupBody || 'Loading •••')}
@@ -150,7 +142,7 @@ async function open(options) {
         if (options.modal)
             $popup = $body.find(`#${popupId}`);    // exclude the modal overlay div
 
-        if (debug) console.debug(`popup ${popupId} appended to body`, $popup.length);
+        if (debug) console.debug(`popup appended to body`, $popup.length);
 
         initPopupListeners();   // popup events: fullscreen, close(ESC, blur, close icon)
 
@@ -159,7 +151,7 @@ async function open(options) {
     }
 
 
-    let openAnimation = openAnimatePopup($popup, options.target, repurposeLastPopup);
+    openAnimatePopup($popup, options.target);
 
     // fetch the url content
     if (sourceIsUrl) {
@@ -200,11 +192,10 @@ async function open(options) {
         if (debug) console.debug('replace content:', $popup.find('.popup-body').html());
 
         // animate popup open again as it's remotely loaded content is probably bigger
-        openAnimatePopup($popup, options.target, repurposeLastPopup);
+        openAnimatePopup($popup, options.target);
     }
 
     $popup.find('.icons svg').fadeIn();     // this is really just to get Firefox to re-render them properly
-    preventClose = false;    // popup mustn't be closed while being repurposed.
 
     return $popup[0];  // enables popup element to be manipulated by invoker
 }
@@ -212,8 +203,8 @@ async function open(options) {
 
 
 
-function openAnimatePopup($popup, target=null, repurposeLastPopup=false) {
-    if (debug) console.debug(`openAnimatePopup `, $popup[0].id);
+function openAnimatePopup($popup, target=null) {
+    if (debug) console.debug(`openAnimatePopup target`, target);
 
     // popup sizing
     const popupWidth = $popup.width();
@@ -230,7 +221,7 @@ function openAnimatePopup($popup, target=null, repurposeLastPopup=false) {
     if (debug) console.debug(`popup size relative to window`, popupArea/windowArea);
 
     // focus/select first input element of any form content
-    const formInput = document.querySelector(`#${$popup[0].id} .popup-body input`);
+    const formInput = document.querySelector(`.popup-box .popup-body input`);
     if (formInput) {
         formInput.focus();
         formInput.select();
@@ -451,76 +442,18 @@ function executeCallback(callback) {
 
 
 
-/** close/destroy all popup popups
- * @returns {void}
- */
-function closeAll() {
-    const popups = getAllPopups();
-    const modals = getAllModals();
-
-    if (popups.length)
-        popups.forEach((popup) => {
-            popup.remove();
-        });
-
-    if (modals.length)
-        modals.forEach((modal) => {
-            modal.remove();
-        });
-}
-
-
-/** close/destroy the topmost popup
- * @returns {void}
- */
-function closeLast() {
-    const popups = getAllPopups();
-    if (popups.length) {
-        const lastPopup = popups[popups.length - 1];
-        close(lastPopup);
-    }
-}
-
-
-
-/** close/destroy all except last popup
- * @returns Element | null
- */
-function closeAllButLast() {
-    let popups = getAllPopups();
-    popups = [...popups];   // convert NodeList to array
-    if (debug) console.log(`closeAllButLast popups`, popups);
-    const lastPopup = popups.length ? popups.pop() : null;
-
-    if (popups.length) {
-        popups.forEach((popup) => {
-            const modal = getRelatedModal(popup);
-            if (modal)
-                modal.remove();
-            popup.remove();
-        });
-    }
-
-    return lastPopup;
-}
-
-
-
 /** close/destroy the specified popup
- * @param {object|jQuery|HTMLElement|Element } popup
  * @returns {void}
  */
-function close(popup) {
-    const $popup = jQuery(popup).closest('.popup-box');
-    if (!$popup.length)
+function close() {
+    const popup = document.querySelector('.popup-box');
+    if (!popup)
         return;
 
-    popup = $popup[0];
-
-    if (debug) console.debug(`  closing popup`, popup.id);
+    if (debug) console.debug(`  closing popup`);
 
     // click that launched a popup shouldn't also remove it
-    const createdAt = popup.getAttribute('data-created');
+    const createdAt = popup.dataset.created;
     if ((Date.now() - createdAt) < 500) {
         if (debug) console.debug(`    cancelled close popup because it's less than a second old`);
         return;
@@ -528,99 +461,55 @@ function close(popup) {
 
     if (debug) console.debug(`    popup is ${Date.now() - createdAt} mS old`);
 
-    const relatedModal = getRelatedModal(popup);
+    const modal = document.querySelector('.popup-modal');
+    if (modal)
+        modal.style.display = 'none';
 
-    // close popup animation
+    // minimize popup
     popup.style.opacity = '0';
     popup.style.transform = popup.style.transform.replace('scale(1)', 'scale(0)');
-
-    removeClosedPopupTimeout = window.setTimeout(function () {
-        popup.remove();
-        if (relatedModal)
-            relatedModal.remove();
-
-    }, 500);
 }
 
 
-function getAllPopups() {
-    return document.querySelectorAll('.popup-box');
+function closeLast() {
+    close();
+    console.warn('package @aamasri/popup method closeLast() is deprecated because there is only ONE popup instance - use popup.close() instead');
 }
-
-function getAllModals() {
-    return document.querySelectorAll('.popup-modal');
+function closeAll() {
+    close();
+    console.warn('package @aamasri/popup method closeAll() is deprecated because there is only ONE popup instance - use popup.close() instead');
 }
-
-function getRelatedModal(popup) {
-    return document.querySelector(`.popup-modal[data-for="${popup.id}"]`);
-}
-
-function getRelatedPopup(modal) {
-    const popupId = modal.getAttribute('data-for');
-    return document.getElementById(popupId);
+function closeAllButLast() {
+    console.warn('package @aamasri/popup method closeAllButLast() is deprecated because there is only ONE popup instance.');
 }
 
 
 // setup popup blur event detection once (on body element)
 let blurHandlerBound = false;
 function initPopupListeners() {
-    if (blurHandlerBound || preventClose)
+    if (blurHandlerBound)
         return;
 
     blurHandlerBound = true;
 
     jQuery(document).on('click', event => {
-        const $clicked = jQuery(event.target);
+        const clicked = event.target;
 
-        if (debug) console.debug(`clicked on ${$clicked[0].nodeName} "${$clicked.text().substring(0,10)}.."`);
+        if (debug) console.debug(`clicked on ${clicked.nodeName} "${clicked.innerText.substring(0,10)}.."`);
 
         // interacting with a popup only closes any later/on-top popups
-        const $closestPopupBox = $clicked.closest('.popup-box');
-        if ($closestPopupBox.length) {
-            if (debug) console.debug(`  clicked on popup`, $closestPopupBox[0].id);
-            const createdAt = $closestPopupBox[0].getAttribute('data-created');
+        const closestPopupBox = clicked.closest('.popup-box');
+        if (closestPopupBox) {
+            if (debug) console.debug(`  clicked on the popup`);
 
-            getAllPopups().forEach((popup) => {
-                if (popup.getAttribute('data-created') > createdAt)
-                    close(popup);
-            });
-
-            if ($clicked.closest('.icon-close').length) {
-                if (debug) console.debug(`  clicked on popup close button`);
-                close($closestPopupBox);
-            }
-
-            if ($clicked.closest('.icon-fullscreen').length) {
-                const url = $closestPopupBox.data('url');
-                if (debug) console.debug(`  clicked on popup fullscreen button`, url);
-                window.open(url, '_self');
-            }
-
-            return;
+            if (clicked.closest('.icon-close'))
+                if (debug) console.debug(`  clicked the popup close button`);
+            else
+                return;     // ignore clicks on the popup itself
         }
 
-        // clicking on a modal overlay closes it, it's related popup and all later/on-top popups/modals
-        const $closestModalOverlay = $clicked.closest('.popup-modal');
-        if ($closestModalOverlay.length) {
-            const relatedPopup = getRelatedPopup($closestModalOverlay[0]);
-            if (relatedPopup) {
-                if (debug) console.debug(`  clicked on modal for popup`, relatedPopup.id);
-
-                const createdAt = relatedPopup.getAttribute('data-created');
-
-                getAllPopups().forEach((popup) => {
-                    if (popup.getAttribute('data-created') >= createdAt)
-                        close(popup);
-                });
-            } else
-                if (debug) console.debug(`  clicked on a modal but it's related popup is no longer in the DOM`);
-
-            return;
-        }
-
-        console.log(` click outside popup -> closing last popup`);
-        closeLast();    // click was not on a popup or modal
-
+        if (debug) console.debug(`  closing popup`);
+        close();
     }).on('keydown', (event) => {
         if (debug) console.debug(`key pressed`, event.key);
         if (event.key === 'Escape') {
@@ -664,7 +553,6 @@ options object {
     target:     string | object     popup target: html content, selector, jQuery object, or element
     fragment:   selector            selector by which to isolate a portion of the source HTML
     modal:      boolean             page background dimming
-    replace:    boolean             whether to close any existing popups or layer up
     onClose:    function | string   callback function or eval(string) to execute after popup dismissed
     classes:    string              classes to apply to the popup container element
     attributes: string              attributes to apply to the popup container element eg. 'data-ignore-events="true"'
