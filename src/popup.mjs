@@ -11,10 +11,11 @@ import { getDocumentOffset, getViewportOffset, isVisible, onTopZIndex } from '@a
 
 
 // module scope vars
-let debug = false;
+let debug = true;
 let loadUrlBusy;
 let $body;
 let $window;
+let $popup;
 
 
 /** launches a content popup box configured by an options object
@@ -79,13 +80,8 @@ async function open(options) {
         popupBody = popupBody || options.source || '';
     }
 
-    let $popup;
     let existingPopup = document.querySelector('.popup-box');
     if (existingPopup) {
-        // reverse any close animation
-        existingPopup.style.opacity = '1';
-        existingPopup.style.transform = existingPopup.style.transform.replace('scale(0)', 'scale(1)');
-
         $popup = jQuery(existingPopup);
         existingPopup.dataset.created = Date.now().toString();
 
@@ -95,12 +91,23 @@ async function open(options) {
         // only replace content if it's changed (avoids network hits from reloaded assets)
         const $popupBody = $popup.find('.popup-body');
         const previousContent = $popupBody.html();
+
         const newContent = popupBody || 'Loading •••';
         if (newContent !== previousContent)
             $popupBody.html(newContent);
 
         $popup.find('.arrow').css({ 'display': 'none' }).removeClass('top bottom left right');  // reset arrow
+
+        // undo closed styles (bypassing CSS transitions)
+        const originalTransition = existingPopup.style.transition;
+        existingPopup.style.transition = 'none';
+        existingPopup.style.opacity = '1';
+        existingPopup.style.transform = existingPopup.style.transform.replace('scale(0)', '');
+        existingPopup.offsetWidth; // force reflow
+        existingPopup.style.transition = originalTransition;
+
         if (debug) console.debug(`popup has been repurposed`);
+
     } else {
         // build the popup from scratch
         const modalDiv = `<div class="popup-modal" style="display: ${options.modal ? 'block' : 'none'}"></div>`;
@@ -109,16 +116,12 @@ async function open(options) {
                                             <path d="M35.76335,28.59668c-2.91628,0.00077 -5.54133,1.76841 -6.63871,4.47035c-1.09737,2.70194 -0.44825,5.79937 1.64164,7.83336l45.09961,45.09961l-45.09961,45.09961c-1.8722,1.79752 -2.62637,4.46674 -1.97164,6.97823c0.65473,2.51149 2.61604,4.4728 5.12753,5.12753c2.51149,0.65473 5.18071,-0.09944 6.97823,-1.97165l45.09961,-45.09961l45.09961,45.09961c1.79752,1.87223 4.46675,2.62641 6.97825,1.97168c2.5115,-0.65472 4.47282,-2.61605 5.12755,-5.12755c0.65472,-2.5115 -0.09946,-5.18073 -1.97168,-6.97825l-45.09961,-45.09961l45.09961,-45.09961c2.11962,-2.06035 2.75694,-5.21064 1.60486,-7.93287c-1.15207,-2.72224 -3.85719,-4.45797 -6.81189,-4.37084c-1.86189,0.05548 -3.62905,0.83363 -4.92708,2.1696l-45.09961,45.09961l-45.09961,-45.09961c-1.34928,-1.38698 -3.20203,-2.16948 -5.13704,-2.1696z"/>
                                         </svg>
                                     </span>`;
-
         const createdData = `data-created="${Date.now()}"`;
-
         let classes = [];
         if (options.classes && typeof options.classes === 'string') classes.push(options.classes);
-
         const attributes = options.attributes || '';
 
-        // reuse any existing popup
-        $popup = jQuery(`${modalDiv}
+        const $popupAndModal = jQuery(`${modalDiv}
                         <div class="popup-box ${classes.join(' ')}" ${attributes} ${createdData}>
                             <div class="arrow"></div>
                             
@@ -131,27 +134,24 @@ async function open(options) {
                             </div>
                         </div>`);
 
-        $popup.appendTo($body);
+        $popupAndModal.appendTo($body);
 
         // apply z-index to modal underlay and popup box
         const onTop = onTopZIndex();
         if (onTop)
-            $popup.css('z-index', onTop);
+            $popupAndModal.css('z-index', onTop);
 
-
-        if (options.modal)
-            $popup = $body.find(`#${popupId}`);    // exclude the modal overlay div
+        $popup = jQuery('.popup-box');
 
         if (debug) console.debug(`popup appended to body`, $popup.length);
 
         initPopupListeners();   // popup events: fullscreen, close(ESC, blur, close icon)
 
         if (options.onClose)
-            bindCloseCallback($popup, options.onClose);
+            bindCloseCallback(options.onClose);
     }
 
-
-    openAnimatePopup($popup, options.target);
+    openAnimatePopup(options.target);
 
     // fetch the url content
     if (sourceIsUrl) {
@@ -192,7 +192,7 @@ async function open(options) {
         if (debug) console.debug('replace content:', $popup.find('.popup-body').html());
 
         // animate popup open again as it's remotely loaded content is probably bigger
-        openAnimatePopup($popup, options.target);
+        openAnimatePopup(options.target);
     }
 
     $popup.find('.icons svg').fadeIn();     // this is really just to get Firefox to re-render them properly
@@ -203,7 +203,7 @@ async function open(options) {
 
 
 
-function openAnimatePopup($popup, target=null) {
+function openAnimatePopup(target=null) {
     if (debug) console.debug(`openAnimatePopup target`, target);
 
     // popup sizing
@@ -228,7 +228,7 @@ function openAnimatePopup($popup, target=null) {
     }
 
     const $target = jQuery(target);
-    positionPopup($popup, $target, 40);     // position the popup on target (or centered in viewport)
+    positionPopup($target, 40);     // position the popup on target (or centered in viewport)
 }
 
 
@@ -237,9 +237,8 @@ function openAnimatePopup($popup, target=null) {
 // based on available space, the popup will be positioned above, below, left or right of the target
 // if the popup is too large to fit beside the target, it will be positioned above or below the target
 // if the popup is still too large, it will be positioned in the center of the viewport.
-function positionPopup(popup, target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
+function positionPopup(target, TARGET_MARGIN = 40, PAGE_MARGIN = 20) {
     if (debug) console.log('positionPopup');
-    const $popup = jQuery(popup);
     const $target = jQuery(target);
     if (!$popup.length)
         return;
@@ -536,9 +535,8 @@ function initPopupListeners() {
 
 
 
-function bindCloseCallback($popup, callback) {
-
 // Create an observer instance linked to the callback function
+function bindCloseCallback(callback) {
     const observer = new MutationObserver((mutationsList) => {
         mutationsList.forEach((mutation) => {
             mutation.removedNodes.forEach((node) => {
@@ -550,7 +548,7 @@ function bindCloseCallback($popup, callback) {
         });
     });
 
-// Start observing the target node for configured mutations
+    // Start observing the target node for configured mutations
     observer.observe(document.querySelector('body'), { childList: true, subtree: true });
 }
 
@@ -577,4 +575,4 @@ popup.open(options).then(function() {
 </pre>`;
 
 
-export { open, close, closeLast, closeAll, closeAllButLast };
+export { open, close, closeLast, closeAll, closeAllButLast, openAnimatePopup };
