@@ -100,6 +100,7 @@ async function open(options) {
 
         // undo closed styles (bypassing CSS transitions)
         const originalTransition = existingPopup.style.transition;
+        existingPopup.classList.remove('large');
         existingPopup.style.transition = 'none';
         existingPopup.style.opacity = '1';
         existingPopup.style.transform = existingPopup.style.transform.replace(/scale[(0-9.)]+/g, '').trim();
