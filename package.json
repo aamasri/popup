@@ -1,7 +1,7 @@
 {
   "name": "@aamasri/popup",
-  "version": "2.0.4",
-  "versionDescription": "Reset popup class 'large' when recycling a popup.",
+  "version": "2.0.5",
+  "versionDescription": "Fixed clicking on popup closes it.",
   "scripts": {
     "build-development": "webpack --mode development",
     "build-production": "webpack --mode production",
