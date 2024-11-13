@@ -1,7 +1,7 @@
 {
   "name": "@aamasri/popup",
-  "version": "2.0.6",
-  "versionDescription": "upgraded all packages. Changed eval to safeEval.",
+  "version": "2.0.7",
+  "versionDescription": "Removed duplicate package import.",
   "scripts": {
     "build-development": "webpack --mode development",
     "build-production": "webpack --mode production",

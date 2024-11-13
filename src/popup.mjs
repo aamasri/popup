@@ -1,7 +1,6 @@
 import './popup.styl';
 import { getDocumentOffset, getViewportOffset, isVisible, onTopZIndex } from '@aamasri/web-components/src/js/dom-utils.js';
 import '@aamasri/web-components/src/js/safe-eval.js';
-import safeEval from "@aamasri/web-components/src/js/safe-eval.js";
 
 
 // module scope vars
