@@ -1,5 +1,7 @@
 import './popup.styl';
-import { getDocumentOffset, getViewportOffset, isVisible, onTopZIndex } from '@aamasri/dom-utils';
+import { getDocumentOffset, getViewportOffset, isVisible, onTopZIndex } from '@aamasri/web-components/src/js/dom-utils.js';
+import '@aamasri/web-components/src/js/safe-eval.js';
+import safeEval from "@aamasri/web-components/src/js/safe-eval.js";
 
 
 // module scope vars
@@ -426,7 +428,7 @@ function executeCallback(callback) {
 
         case 'string':
             try {
-                eval(callback);
+                safeEval(callback);
             } catch (error) {
                 console.error('close callback failed with', error);
             }

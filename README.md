@@ -180,13 +180,13 @@ Popup supports [npm](https://www.npmjs.com/package/popup) under the name `@aamas
 Popup depends on 2 external packages:
 <ol>
 <li>jquery</li>
-<li>@aamasri/dom-utils</li>
+<li>@aamasri/web-components</li>
 </ol>
 These dependencies are bundled (as separate pre-built 'chunks') in this package's "dist" folder.  
 <br>
 Invoking the popup() function will dynamically load these dependencies at run-time (if these scripts don't already exist on the page) and they'll be added to the global window object.
 <br><br>
-If your page already loads the jQuery or @aamasri/dom-utils packages, popup will use them instead.
+If your page already loads the jQuery or @aamasri/web-components packages, popup will use them instead.
 
 
 <br><br>
