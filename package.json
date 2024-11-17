@@ -1,21 +1,21 @@
 {
   "name": "@aamasri/popup",
-  "version": "2.0.7",
-  "versionDescription": "Removed duplicate package import.",
+  "version": "2.0.8",
+  "versionDescription": "Upgraded @aamasri/web-components package among others.",
   "scripts": {
     "build-development": "webpack --mode development",
     "build-production": "webpack --mode production",
     "publish": "node ./publish.js"
   },
   "dependencies": {
-    "@aamasri/web-components": "^1.x",
+    "@aamasri/web-components": "1.x - 2.x",
     "jquery": "1.7.0 - 3.x"
   },
   "devDependencies": {
     "@babel/plugin-transform-runtime": "^7.x",
     "@babel/preset-env": "^7.x",
     "autoprefixer": "^10.x",
-    "babel-loader": "^9.2.1",
+    "babel-loader": "^9.x",
     "css-loader": "^7.x",
     "html-webpack-plugin": "^5.x",
     "mini-css-extract-plugin": "^2.x",
@@ -23,7 +23,7 @@
     "stylus-loader": "^8.x",
     "terser-webpack-plugin": "^5.x",
     "webpack": "^5.x",
-    "webpack-cli": "^5.1.4"
+    "webpack-cli": "^5.x"
   },
   "description": "A flexible javascript popup.",
   "main": "src/popup.mjs",
